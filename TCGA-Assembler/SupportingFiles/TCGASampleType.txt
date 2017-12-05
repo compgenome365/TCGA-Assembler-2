@@ -1,0 +1,15 @@
+Options	Tissue or Cell Type	Code	Category
+TP	Primary Solid Tumor	1	Tumor
+TR	Recurrent Solid Tumor	2	Tumor
+TB	Primary Blood Derived Cancer - Peripheral Blood	3	Tumor
+TRBM	Recurrent Blood Derived Cancer - Bone Marrow	4	Tumor
+TAP	Additional - New Primary	5	Tumor
+TM	Metastatic	6	Tumor
+TAM	Additional Metastatic	7	Tumor
+THOC	Human Tumor Original Cells	8	Tumor
+TBM	Primary Blood Derived Cancer - Bone Marrow	9	Tumor
+NB	Blood Derived Normal	10	Normal
+NT	Solid Tissue Normal	11	Normal
+NBC	Buccal Cell Normal	12	Normal
+NEBV	EBV Immortalized Normal	13	Normal
+NBM	Bone Marrow Normal	14	Normal

@@ -858,6 +858,8 @@ ProcessSomaticMutationData <- function(inputFilePath, outputFileName, outputFile
 ProcessCPTACData <- function(inputFilePath, outputFileName, outputFileFolder) {
     options(warn = -1)
     dir.create(path = outputFileFolder, recursive = TRUE)
+    ###
+    saveFolderName <- outputFileFolder
     out <- inputFilePath
     d <- read.csv(out,
                   skip = 0,
@@ -1103,7 +1105,7 @@ if (class(VCwebContent) == "try-error") {
         VCstartID <- str_locate_all(string = VCwebContent, pattern = "\">")[[1]][1, "end"]+1
         VCendID <- str_locate_all(string = VCwebContent, pattern = "</span>")[[1]][1, "start"]-1
         VCnewestVersionNum <- substr(VCwebContent, VCstartID, VCendID)
-        if (VCnewestVersionNum != "2.0.5") {
+        if (VCnewestVersionNum != "2.0.6") {
             writeLines("\n")
             writeLines("***************************************************************")
             writeLines("A new version of TCGA-Assembler is available!")

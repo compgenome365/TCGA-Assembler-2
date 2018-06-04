@@ -52,7 +52,8 @@
 FieldsList <- function(arch = "legacy",
                        endp = "files") {
     library(rjson)
-    url <- paste("https://gdc-api.nci.nih.gov/",
+    #url <- paste("https://gdc-api.nci.nih.gov/",
+    url <- paste("https://api.gdc.cancer.gov/",
                  arch,
                  ifelse(arch == "", "", "/"),
                  endp,
@@ -99,7 +100,8 @@ FieldsMeta <- function() {
 EntityCount <- function(arch = "legacy",
                         endp = "files") {
     library(rjson)
-    url <- paste("https://gdc-api.nci.nih.gov/",
+    #url <- paste("https://gdc-api.nci.nih.gov/",
+    url <- paste("https://api.gdc.cancer.gov/",
                  arch,
                  ifelse(arch == "", "", "/"),
                  endp,
@@ -600,7 +602,7 @@ Filter <- function(sAssay) {
         filter$data_type             <- NA
         filter$experimental_strategy <- NA
         filter$platform              <- "proteome_iTRAQ"
-        filter$file_name             <- "_Proteome.(itraq|spectral_counts)\\.tsv"
+        filter$file_name             <- "_Proteome.(itraq|spectral_counts|CDAP\\.r2\\.spectral_counts)\\.tsv"
         filter$submitter_id          <- NA
     }
     return(filter)
@@ -635,8 +637,10 @@ MetaDataClin <- function(tmpDir = ".",
     }
     print("metadata file: preparing ...")
     out <- paste(tmpDir, "/tmp_metadata_", endp, ".tsv", sep = "")
-    url <- paste('"https://gdc-api.nci.nih.gov/', arch,
-                 ifelse(arch == '', '', '/'), endp, '"',
+    #url <- paste('"https://gdc-api.nci.nih.gov/',
+    url <- paste("https://api.gdc.cancer.gov/",
+                 arch,
+                 ifelse(arch == '', '', '/'), endp,
                  sep = '')
     opt <- paste("-o ", out,
                  " --silent --show-error --request POST",
@@ -656,7 +660,7 @@ MetaDataClin <- function(tmpDir = ".",
     payload <- list(filters = filterAll,
                     format = "TSV",
                     sort = "file_id",
-                    from = 1,
+                    from = 0,
                     size = entityCount,
                     fields = paste(fieldsMeta, collapse = ","))
     cat(toJSON(payload), file = paste(tmpDir, "/tmp_metadata.json", sep = ""))
@@ -728,8 +732,10 @@ MetaDataSoma <- function(vCancer = "BRCA",
     filter <- Filter(sAssay)
     print("metadata file: preparing ...")
     out <- paste(tmpDir, "/tmp_metadata_", endp, ".tsv", sep = "")
-    url <- paste('"https://gdc-api.nci.nih.gov/', arch,
-                 ifelse(arch == '', '', '/'), endp, '"',
+    #url <- paste('"https://gdc-api.nci.nih.gov/',
+    url <- paste("https://api.gdc.cancer.gov/",
+                 arch,
+                 ifelse(arch == '', '', '/'), endp,
                  sep = '')
     opt <- paste("-o ", out, " --silent --show-error --request POST ",
                  "--header Content-Type:application/json --data @",
@@ -769,7 +775,7 @@ MetaDataSoma <- function(vCancer = "BRCA",
     payload <- list(filters = filterAll,
                     format = "TSV",
                     sort = "file_id",
-                    from = 1,
+                    from = 0,
                     size = entityCount,
                     fields = paste(fieldsMeta, collapse = ","))
     cat(toJSON(payload), file = paste(tmpDir, "/tmp_metadata.json", sep = ""))
@@ -863,8 +869,10 @@ MetaData <- function(vCancer = "BRCA",
     filter <- Filter(sAssay)
     print("metadata file: preparing ...")
     out <- paste(tmpDir, "/tmp_metadata_", endp, ".tsv", sep = "")
-    url <- paste('"https://gdc-api.nci.nih.gov/', arch,
-                 ifelse(arch == '', '', '/'), endp, '"',
+    #url <- paste('"https://gdc-api.nci.nih.gov/',
+    url <- paste("https://api.gdc.cancer.gov/",
+                 arch,
+                 ifelse(arch == '', '', '/'), endp,
                  sep = '')
     opt <- paste("-o ", out,
                  " --silent --show-error --request POST",
@@ -912,7 +920,7 @@ MetaData <- function(vCancer = "BRCA",
     payload <- list(filters = filterAll,
                     format = "TSV",
                     sort = "file_id",
-                    from = 1,
+                    from = 0,
                     size = entityCount,
                     fields = paste(fieldsMeta, collapse = ","))
     cat(toJSON(payload), file = paste(tmpDir, "/tmp_metadata.json", sep = ""))
@@ -985,7 +993,8 @@ FileNameById <- function(fileId2Bar,
         stopifnot(length(fileId2Bar) > 0)  # no files available for this filter
         library(rjson)
         tmpTar <- paste(tmpDir, "/gdc_download_", TimeNow(), ".tar.gz", sep = "")
-        url <- paste("https://gdc-api.nci.nih.gov/",
+        #url <- paste("https://gdc-api.nci.nih.gov/",
+        url <- paste("https://api.gdc.cancer.gov/",
                      arch,
                      ifelse(arch == "", "", "/"),
                      "data",
@@ -2917,277 +2926,278 @@ DownloadCPTACData <- function(cancerType = NULL,
                     assayGroup = "itraq")
     vCancerCptac <- c("BRCA", "OV", "COAD", "READ")
     vCancer <- intersect(l$vCancer, vCancerCptac)
-    if (is.null(vCancer)) {
+    if (is.null(vCancer) | length(vCancer) == 0) {
         print(c("cancerType should be 'NULL' (for all cancerType) or one of: ",
                 vCancerCptac))
-        stopifnot(is.null(vCancer))
-    }
-    urlPre <- "https://cptc-xfer.uis.georgetown.edu/publicData/Phase_II_Data/"
-    print("CPTAC files  : downloading ...")
-    vFileName <- NULL
-    for (sCancer in vCancer) {
-        if (sCancer %in% c("BRCA")) {
-            vPathname <- c("TCGA_Breast_Cancer/TCGA_Breast_BI_Proteome_CDAP_Protein_Report.r3/TCGA_Breast_BI_Proteome.itraq.tsv",
-                           ##"TCGA_Breast_Cancer/TCGA_Breast_BI_Proteome_CDAP_Protein_Report.r2/TCGA_Breast_BI_Proteome_CDAP.r2.itraq.tsv",
-                           # "TCGA_Breast_Cancer/TCGA_Breast_BI_Proteome_CDAP_Protein_Report.r2/TCGA_Breast_BI_Proteome_CDAP.r2.peptides.tsv",
-                           # "TCGA_Breast_Cancer/TCGA_Breast_BI_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Breast_BI_Phosphoproteome.peptides.tsv",
-                           # "TCGA_Breast_Cancer/TCGA_Breast_BI_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Breast_BI_Phosphoproteome.phosphopeptide.itraq.tsv",
-                           "TCGA_Breast_Cancer/TCGA_Breast_BI_Phosphoproteome_CDAP_Protein_Report.r4/TCGA_Breast_BI_Phosphoproteome.phosphosite.itraq.tsv")
-            ##"TCGA_Breast_Cancer/TCGA_Breast_BI_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Breast_BI_Phosphoproteome.phosphosite.itraq.tsv")
-        } else if (sCancer %in% c("COAD", "READ")) {
-            vPathname <- c(# "TCGA_Colorectal_Cancer/TCGA_Colon_VU_Proteome_CDAP_Protein_Report.r2/TCGA_Colon_VU_Proteome_CDAP.r2.peptides.tsv",
-                           # "TCGA_Colorectal_Cancer/TCGA_Colon_VU_Proteome_CDAP_Protein_Report.r2/TCGA_Colon_VU_Proteome_CDAP.r2.precursor_area.tsv",
-                           #"TCGA_Colorectal_Cancer/TCGA_Colon_VU_Proteome_CDAP_Protein_Report.r2/TCGA_Colon_VU_Proteome_CDAP.r2.spectral_counts.tsv")
-                           "TCGA_Colorectal_Cancer/TCGA_Colon_VU_Proteome_CDAP_Protein_Report.r2/TCGA_Colon_VU_Proteome.spectral_counts.tsv")
-        } else if (sCancer %in% c("OV")) {
-            vPathname <- c("TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Proteome_CDAP_Protein_Report.r3/TCGA_Ovarian_JHU_Proteome.itraq.tsv",
-                           ##"TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Proteome_CDAP_Protein_Report.r2/TCGA_Ovarian_JHU_Proteome_CDAP.r2.itraq.tsv",
-                           # "TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Proteome_CDAP_Protein_Report.r2/TCGA_Ovarian_JHU_Proteome_CDAP.r2.peptides.tsv",
-                           # "TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Glycoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_JHU_Glycoproteome.glycopeptide.itraq.tsv",
-                           "TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Glycoproteome_CDAP_Protein_Report.r4/TCGA_Ovarian_JHU_Glycoproteome.glycosite.itraq.tsv",
-                           ##"TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Glycoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_JHU_Glycoproteome.glycosite.itraq.tsv",
-                           # "TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Glycoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_JHU_Glycoproteome.peptides.tsv",
-                           "TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Proteome_CDAP_Protein_Report.r3/TCGA_Ovarian_PNNL_Proteome.itraq.tsv",
-                           ##"TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Proteome_CDAP_Protein_Report.r2/TCGA_Ovarian_PNNL_Proteome_CDAP.r2.itraq.tsv",
-                           # "TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Proteome_CDAP_Protein_Report.r2/TCGA_Ovarian_PNNL_Proteome_CDAP.r2.peptides.tsv",
-                           # "TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_PNNL_Phosphoproteome.peptides.tsv",
-                           # "TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_PNNL_Phosphoproteome.phosphopeptide.itraq.tsv",
-                           "TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Phosphoproteome_CDAP_Protein_Report.r4/TCGA_Ovarian_PNNL_Phosphoproteome.phosphosite.itraq.tsv")
-            ##"TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_PNNL_Phosphoproteome.phosphosite.itraq.tsv")
-        }
-        for (sAssay in l$vAssay) {
-            filter <- Filter(sAssay)
-            for (sPathname in vPathname[grep(filter$file_name,vPathname)]) {
-                fileName <- rev(strsplit(sPathname, split = "/")[[1]])[1]
-                url <- paste(urlPre, sPathname, sep = "")
-                out <- paste(tmpDir, "/", fileName, sep = "")
-                opt <- paste("--silent --show-error -o", out)
-                arg <- paste(opt, url)
-                stdOut <- system2("curl", arg, stdout = T)
-                if (!is.null(attr(stdOut, "status"))) {
-                    print("error (download): check the proxy")
-                }
-                stopifnot(is.null(attr(stdOut, "status")))
-                # sPathName <- paste(saveFolderName, "/", fileName, sep = "")
-                # bFileRename <- file.rename(from = out, to = sPathName)
-                # stopifnot(all(bFileRename))
-                # fileName <- rev(strsplit(sPathName, split = "/")[[1]])[1]
-                d <- read.csv(out,
-                              skip = 0,
-                              sep = "\t",
-                              row.names = NULL,
-                              as.is = T,
-                              na.strings = "")
-                if (sAssay == "proteome_iTRAQ") {
-                    if (sCancer %in% c("COAD", "READ")) {
-                        vRowNot <- c("Total")
-                        vColNot <- c("Total.Spectral.Counts",
-                                     "Total.Unshared.Spectral.Counts")
-                        vColDes <- c("Gene",
-                                     "Description",
-                                     "Organism",
-                                     "Chromosome",
-                                     "Locus")
-                    } else {
-                        vRowNot <- c("Mean", "Median", "StdDev")
+        stopifnot(is.null(vCancer) | length(vCancer) == 0)
+    } else {
+        urlPre <- "https://cptc-xfer.uis.georgetown.edu/publicData/Phase_II_Data/"
+        print("CPTAC files  : downloading ...")
+        vFileName <- NULL
+        for (sCancer in vCancer) {
+            if (sCancer %in% c("BRCA")) {
+                vPathname <- c("TCGA_Breast_Cancer/TCGA_Breast_BI_Proteome_CDAP_Protein_Report.r3/TCGA_Breast_BI_Proteome.itraq.tsv",
+                               ##"TCGA_Breast_Cancer/TCGA_Breast_BI_Proteome_CDAP_Protein_Report.r2/TCGA_Breast_BI_Proteome_CDAP.r2.itraq.tsv",
+                               # "TCGA_Breast_Cancer/TCGA_Breast_BI_Proteome_CDAP_Protein_Report.r2/TCGA_Breast_BI_Proteome_CDAP.r2.peptides.tsv",
+                               # "TCGA_Breast_Cancer/TCGA_Breast_BI_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Breast_BI_Phosphoproteome.peptides.tsv",
+                               # "TCGA_Breast_Cancer/TCGA_Breast_BI_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Breast_BI_Phosphoproteome.phosphopeptide.itraq.tsv",
+                               "TCGA_Breast_Cancer/TCGA_Breast_BI_Phosphoproteome_CDAP_Protein_Report.r4/TCGA_Breast_BI_Phosphoproteome.phosphosite.itraq.tsv")
+                ##"TCGA_Breast_Cancer/TCGA_Breast_BI_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Breast_BI_Phosphoproteome.phosphosite.itraq.tsv")
+            } else if (sCancer %in% c("COAD", "READ")) {
+                vPathname <- c(# "TCGA_Colorectal_Cancer/TCGA_Colon_VU_Proteome_CDAP_Protein_Report.r2/TCGA_Colon_VU_Proteome_CDAP.r2.peptides.tsv",
+                               # "TCGA_Colorectal_Cancer/TCGA_Colon_VU_Proteome_CDAP_Protein_Report.r2/TCGA_Colon_VU_Proteome_CDAP.r2.precursor_area.tsv",
+                               #"TCGA_Colorectal_Cancer/TCGA_Colon_VU_Proteome_CDAP_Protein_Report.r2/TCGA_Colon_VU_Proteome.spectral_counts.tsv",
+                               "TCGA_Colorectal_Cancer/TCGA_Colon_VU_Proteome_CDAP_Protein_Report.r2/TCGA_Colon_VU_Proteome_CDAP.r2.spectral_counts.tsv")
+            } else if (sCancer %in% c("OV")) {
+                vPathname <- c("TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Proteome_CDAP_Protein_Report.r3/TCGA_Ovarian_JHU_Proteome.itraq.tsv",
+                               ##"TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Proteome_CDAP_Protein_Report.r2/TCGA_Ovarian_JHU_Proteome_CDAP.r2.itraq.tsv",
+                               # "TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Proteome_CDAP_Protein_Report.r2/TCGA_Ovarian_JHU_Proteome_CDAP.r2.peptides.tsv",
+                               # "TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Glycoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_JHU_Glycoproteome.glycopeptide.itraq.tsv",
+                               "TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Glycoproteome_CDAP_Protein_Report.r4/TCGA_Ovarian_JHU_Glycoproteome.glycosite.itraq.tsv",
+                               ##"TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Glycoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_JHU_Glycoproteome.glycosite.itraq.tsv",
+                               # "TCGA_Ovarian_Cancer/TCGA_Ovarian_JHU_Glycoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_JHU_Glycoproteome.peptides.tsv",
+                               "TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Proteome_CDAP_Protein_Report.r3/TCGA_Ovarian_PNNL_Proteome.itraq.tsv",
+                               ##"TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Proteome_CDAP_Protein_Report.r2/TCGA_Ovarian_PNNL_Proteome_CDAP.r2.itraq.tsv",
+                               # "TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Proteome_CDAP_Protein_Report.r2/TCGA_Ovarian_PNNL_Proteome_CDAP.r2.peptides.tsv",
+                               # "TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_PNNL_Phosphoproteome.peptides.tsv",
+                               # "TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_PNNL_Phosphoproteome.phosphopeptide.itraq.tsv",
+                               "TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Phosphoproteome_CDAP_Protein_Report.r4/TCGA_Ovarian_PNNL_Phosphoproteome.phosphosite.itraq.tsv")
+                ##"TCGA_Ovarian_Cancer/TCGA_Ovarian_PNNL_Phosphoproteome_CDAP_Protein_Report.r3/TCGA_Ovarian_PNNL_Phosphoproteome.phosphosite.itraq.tsv")
+            }
+            for (sAssay in l$vAssay) {
+                filter <- Filter(sAssay)
+                for (sPathname in vPathname[grep(filter$file_name,vPathname)]) {
+                    fileName <- rev(strsplit(sPathname, split = "/")[[1]])[1]
+                    url <- paste(urlPre, sPathname, sep = "")
+                    out <- paste(tmpDir, "/", fileName, sep = "")
+                    opt <- paste("--silent --show-error -o", out)
+                    arg <- paste(opt, url)
+                    stdOut <- system2("curl", arg, stdout = T)
+                    if (!is.null(attr(stdOut, "status"))) {
+                        print("error (download): check the proxy")
+                    }
+                    stopifnot(is.null(attr(stdOut, "status")))
+                    # sPathName <- paste(saveFolderName, "/", fileName, sep = "")
+                    # bFileRename <- file.rename(from = out, to = sPathName)
+                    # stopifnot(all(bFileRename))
+                    # fileName <- rev(strsplit(sPathName, split = "/")[[1]])[1]
+                    d <- read.csv(out,
+                                  skip = 0,
+                                  sep = "\t",
+                                  row.names = NULL,
+                                  as.is = T,
+                                  na.strings = "")
+                    if (sAssay == "proteome_iTRAQ") {
+                        if (sCancer %in% c("COAD", "READ")) {
+                            vRowNot <- c("Total")
+                            vColNot <- c("Total.Spectral.Counts",
+                                         "Total.Unshared.Spectral.Counts")
+                            vColDes <- c("Gene",
+                                         "Description",
+                                         "Organism",
+                                         "Chromosome",
+                                         "Locus")
+                        } else {
+                            vRowNot <- c("Mean", "Median", "StdDev")
+                            vColNot <- NULL
+                            vColDes <- c("Gene",
+                                         "Description",
+                                         "Organism",
+                                         "Chromosome",
+                                         "Locus")
+                        }
+                    } else if (sAssay == "phosphoproteome_iTRAQ") {
+                        vRowNot <- NULL
                         vColNot <- NULL
-                        vColDes <- c("Gene",
-                                     "Description",
-                                     "Organism",
-                                     "Chromosome",
-                                     "Locus")
+                        vColDes <- c("Phosphosite","Peptide", "Gene", "Organism")
+                    } else if (sAssay == "glycoproteome_iTRAQ") {
+                        vRowNot <- NULL
+                        vColNot <- NULL
+                        vColDes <- c("Glycosite","Peptide", "Gene", "Organism")
                     }
-                } else if (sAssay == "phosphoproteome_iTRAQ") {
-                    vRowNot <- NULL
-                    vColNot <- NULL
-                    vColDes <- c("Phosphosite","Peptide", "Gene", "Organism")
-                } else if (sAssay == "glycoproteome_iTRAQ") {
-                    vRowNot <- NULL
-                    vColNot <- NULL
-                    vColDes <- c("Glycosite","Peptide", "Gene", "Organism")
-                }
-                d <- d[!(d[,vColDes[1]] %in% vRowNot), !(colnames(d) %in% vColNot)]
-                mInfo <- as.matrix(d[, vColDes])
-                mData <- as.matrix(d[, setdiff(colnames(d), vColDes)])
-                for (n in grep("^X[0-9A-Za-z][0-9A-Za-z]\\.", colnames(mData))) {
-                    colnames(mData)[n] <- sub("^X", "", colnames(mData)[n])
-                }
-                for (n in grep("^[0-9A-Za-z][0-9A-Za-z]\\.", colnames(mData))) {
-                    colnames(mData)[n] <- paste("TCGA-",
-                                                gsub("\\.", "-", colnames(mData)[n]),
-                                                sep = "")
-                }
-                for (n in grep("-[0-9][0-9]*-(Log|Unshared|Spectral)", colnames(mData))) {
-                    substr(colnames(mData)[n], 17, 17) <- '.'
-                }
-                for (n in grep("^OVARIAN\\.CONTROL\\.", colnames(mData))) {
-                    colnames(mData)[n] <- gsub("\\.", "-", colnames(mData)[n])
-                    substr(colnames(mData)[n], 16, 16) <- '.'
-                }
-                if (!is.null(barCode)) {
-                    vbCol <- ifelse(substr(colnames(mData), 1, 12) %in%
-                                    substr(barCode, 1, 12), T, F)
-                    if (!any(vbCol)) {
-                        print("CPTAC files  : no inputPatientIDs found!")
+                    d <- d[!(d[,vColDes[1]] %in% vRowNot), !(colnames(d) %in% vColNot)]
+                    mInfo <- as.matrix(d[, vColDes])
+                    mData <- as.matrix(d[, setdiff(colnames(d), vColDes)])
+                    for (n in grep("^X[0-9A-Za-z][0-9A-Za-z]\\.", colnames(mData))) {
+                        colnames(mData)[n] <- sub("^X", "", colnames(mData)[n])
                     }
-                    mData <- mData[, vbCol, drop = F]
-                }
-                if (length(l$sampleTypeId) < 14) {
-                    vbSampleTypeId <- ifelse(substr(colnames(mData), 14, 15) %in%
-                                             l$sampleTypeId, T, F)
-                    if (!any(vbSampleTypeId)) {
-                        print("CPTAC files  : no tissueType found!")
+                    for (n in grep("^[0-9A-Za-z][0-9A-Za-z]\\.", colnames(mData))) {
+                        colnames(mData)[n] <- paste("TCGA-",
+                                                    gsub("\\.", "-", colnames(mData)[n]),
+                                                    sep = "")
                     }
-                    mData <- mData[, vbSampleTypeId, drop = F]
-                }
-                if (sCancer == "COAD") {
-                    vPatient <- 
-                        c("TCGA-A6-3807", "TCGA-A6-3808", "TCGA-A6-3810",
-                          "TCGA-AA-3518", "TCGA-AA-3525", "TCGA-AA-3526",
-                          "TCGA-AA-3529", "TCGA-AA-3531", "TCGA-AA-3534",
-                          "TCGA-AA-3552", "TCGA-AA-3554", "TCGA-AA-3558",
-                          "TCGA-AA-3561", "TCGA-AA-3664", "TCGA-AA-3666",
-                          "TCGA-AA-3672", "TCGA-AA-3684", "TCGA-AA-3695",
-                          "TCGA-AA-3710", "TCGA-AA-3715", "TCGA-AA-3818",
-                          "TCGA-AA-3848", "TCGA-AA-3864", "TCGA-AA-3986",
-                          "TCGA-AA-3989", "TCGA-AA-A004", "TCGA-AA-A00A",
-                          "TCGA-AA-A00E", "TCGA-AA-A00F", "TCGA-AA-A00J",
-                          "TCGA-AA-A00K", "TCGA-AA-A00N", "TCGA-AA-A00O",
-                          "TCGA-AA-A00R", "TCGA-AA-A00U", "TCGA-AA-A010",
-                          "TCGA-AA-A017", "TCGA-AA-A01C", "TCGA-AA-A01D",
-                          "TCGA-AA-A01F", "TCGA-AA-A01I", "TCGA-AA-A01K",
-                          "TCGA-AA-A01P", "TCGA-AA-A01R", "TCGA-AA-A01S",
-                          "TCGA-AA-A01T", "TCGA-AA-A01V", "TCGA-AA-A01X",
-                          "TCGA-AA-A01Z", "TCGA-AA-A022", "TCGA-AA-A024",
-                          "TCGA-AA-A029", "TCGA-AA-A02E", "TCGA-AA-A02H",
-                          "TCGA-AA-A02J", "TCGA-AA-A02O", "TCGA-AA-A02R",
-                          "TCGA-AA-A02Y", "TCGA-AA-A03F", "TCGA-AA-A03J")
-                    vb <- substr(colnames(mData), 1, 12) %in% vPatient
-                    mData <- mData[, vb, drop = F]
-                }
-                if (sCancer == "READ") {
-                    vPatient <- 
-                        c("TCGA-AF-2691", "TCGA-AF-2692", "TCGA-AF-3400",
-                          "TCGA-AF-3913", "TCGA-AG-3574", "TCGA-AG-3580",
-                          "TCGA-AG-3584", "TCGA-AG-3593", "TCGA-AG-3594",
-                          "TCGA-AG-4007", "TCGA-AG-A002", "TCGA-AG-A008",
-                          "TCGA-AG-A00C", "TCGA-AG-A00H", "TCGA-AG-A00Y",
-                          "TCGA-AG-A011", "TCGA-AG-A014", "TCGA-AG-A015",
-                          "TCGA-AG-A016", "TCGA-AG-A01J", "TCGA-AG-A01L",
-                          "TCGA-AG-A01N", "TCGA-AG-A01W", "TCGA-AG-A01Y",
-                          "TCGA-AG-A020", "TCGA-AG-A026", "TCGA-AG-A02N",
-                          "TCGA-AG-A02X", "TCGA-AG-A032", "TCGA-AG-A036")
-                    vb <- substr(colnames(mData), 1, 12) %in% vPatient
-                    mData <- mData[, vb, drop = F]
-                }
-                fileName1 <- paste(saveFolderName,
-                                   "/",
-                                   ifelse(outputFileName == "", "",
-                                          paste(outputFileName, "__", sep = "")),
-                                   paste(sCancer, collapse = "_"),
-                                   "__",
-                                   sAssay,
-                                   "__",
-                                   ifelse(is.null(tissueType), "tissueTypeAll",
-                                          paste(tissueType, collapse = "_")),
-                                   "__",
-                                   # ifelse(sCancer == "OV",
-                                   strsplit(fileName, split = "_")[[1]][3],
-                                   #			""),
-                                   "__",
-                                   TimeNow(),
-                                   ".txt",
-                                   sep = "")
-                write.table(cbind(mInfo, mData),
-                            file = fileName1,
-                            quote = F,
-                            sep = "\t",
-                            col.names = T,
-                            row.names = F,
-                            na = "")
-                rm(mInfo,mData); gc()  # clear the memory
-                vFileName <- c(vFileName, fileName1)
-                # #
-                # vnUnshared <- grep("Unshared", colnames(mData))
-                # mDataShUn <- mData[, vnUnshared - 1]  # barcode.Log.Ratio
-                # mDataUnsh <- mData[, vnUnshared    ]  # barcode.Unshared.Log.Ratio
-                # colnames(mDataShUn) <- unlist(strsplit(colnames(mDataShUn),
-                # 																			 split = "-Log-Ratio"))
-                # colnames(mDataUnsh) <- unlist(strsplit(colnames(mDataUnsh),
-                # 																			 split = "-Unshared-Log-Ratio"))
-                # substr(colnames(mDataShUn), 17, 17) <- '.'
-                # substr(colnames(mDataUnsh), 17, 17) <- '.'
-                # mDataShUn <- mDataShUn[, order(colnames(mDataShUn))]
-                # mDataUnsh <- mDataUnsh[, order(colnames(mDataUnsh))]
-                # stopifnot(all(colnames(mDataUnsh) == colnames(mDataShUn)))
-                # if (!is.null(barCode)) {
-                # 	vbCol <- ifelse(substr(colnames(mDataShUn), 1, 12) %in%
-                # 									substr(barCode, 1, 12), T, F)
-                # 	if (!any(vbCol)) {
-                # 		print("CPTAC files  : no inputPatientIDs found!")
-                # 	}
-                # 	mDataShUn <- mDataShUn[, vbCol, drop = F]
-                # 	mDataUnsh <- mDataUnsh[, vbCol, drop = F]
-                # }
-                # if (length(l$sampleTypeId) < 14) {
-                # 	vbSampleTypeId <- ifelse(substr(colnames(mDataShUn), 14, 15) %in%
-                # 													 l$sampleTypeId, T, F)
-                # 	if (!any(vbSampleTypeId)) {
-                # 		print("CPTAC files  : no tissueType found!")
-                # 	}
-                # 	mDataShUn <- mDataShUn[, vbSampleTypeId, drop = F]
-                # 	mDataUnsh <- mDataUnsh[, vbSampleTypeId, drop = F]
-                # }
-                # sFileNameShUn <- paste(saveFolderName,
-                # 											 "/",
-                # 											 ifelse(outputFileName == "", "",
-                # 															paste(outputFileName, "__", sep = "")),
-                # 											 paste(sCancer, collapse = "_"),
-                # 											 "__",
-                # 											 l$vAssay,
-                # 											 "__",
-                # 											 strsplit(fileName, split = "\\.")[[1]][1],
-                # 											 "__LogRatio",
-                # 											 "__",
-                # 											 TimeNow(),
-                # 											 ".txt",
-                # 											 sep = "")
-                # sFileNameUnsh <- paste(saveFolderName,
-                # 											 "/",
-                # 											 ifelse(outputFileName == "", "",
-                # 															paste(outputFileName, "__", sep = "")),
-                # 											 paste(sCancer, collapse = "_"),
-                # 											 "__",
-                # 											 l$vAssay,
-                # 											 "__",
-                # 											 strsplit(fileName, split = "\\.")[[1]][1],
-                # 											 "__LogRatio_Unshared",
-                # 											 "__",
-                # 											 TimeNow(),
-                # 											 ".txt",
-                # 											 sep = "")
-                # write.table(cbind(mInfo, mDataShUn),
-                # 						file = sFileNameShUn,
-                # 						quote = F,
-                # 						sep = "\t",
-                # 						col.names = T,
-                # 						row.names = F,
-                # 						na = "")
-                # write.table(cbind(mInfo, mDataUnsh),
-                # 						file = sFileNameUnsh,
-                # 						quote = F,
-                # 						sep = "\t",
-                # 						col.names = T,
-                # 						row.names = F,
-                # 						na = "")
-                # vFileName <- c(vFileName, sFileNameShUn, sFileNameUnsh)
-                # #
-        }}
+                    for (n in grep("-[0-9][0-9]*-(Log|Unshared|Spectral)", colnames(mData))) {
+                        substr(colnames(mData)[n], 17, 17) <- '.'
+                    }
+                    for (n in grep("^OVARIAN\\.CONTROL\\.", colnames(mData))) {
+                        colnames(mData)[n] <- gsub("\\.", "-", colnames(mData)[n])
+                        substr(colnames(mData)[n], 16, 16) <- '.'
+                    }
+                    if (!is.null(barCode)) {
+                        vbCol <- ifelse(substr(colnames(mData), 1, 12) %in%
+                                        substr(barCode, 1, 12), T, F)
+                        if (!any(vbCol)) {
+                            print("CPTAC files  : no inputPatientIDs found!")
+                        }
+                        mData <- mData[, vbCol, drop = F]
+                    }
+                    if (length(l$sampleTypeId) < 14) {
+                        vbSampleTypeId <- ifelse(substr(colnames(mData), 14, 15) %in%
+                                                 l$sampleTypeId, T, F)
+                        if (!any(vbSampleTypeId)) {
+                            print("CPTAC files  : no tissueType found!")
+                        }
+                        mData <- mData[, vbSampleTypeId, drop = F]
+                    }
+                    if (sCancer == "COAD") {
+                        vPatient <- 
+                            c("TCGA-A6-3807", "TCGA-A6-3808", "TCGA-A6-3810",
+                              "TCGA-AA-3518", "TCGA-AA-3525", "TCGA-AA-3526",
+                              "TCGA-AA-3529", "TCGA-AA-3531", "TCGA-AA-3534",
+                              "TCGA-AA-3552", "TCGA-AA-3554", "TCGA-AA-3558",
+                              "TCGA-AA-3561", "TCGA-AA-3664", "TCGA-AA-3666",
+                              "TCGA-AA-3672", "TCGA-AA-3684", "TCGA-AA-3695",
+                              "TCGA-AA-3710", "TCGA-AA-3715", "TCGA-AA-3818",
+                              "TCGA-AA-3848", "TCGA-AA-3864", "TCGA-AA-3986",
+                              "TCGA-AA-3989", "TCGA-AA-A004", "TCGA-AA-A00A",
+                              "TCGA-AA-A00E", "TCGA-AA-A00F", "TCGA-AA-A00J",
+                              "TCGA-AA-A00K", "TCGA-AA-A00N", "TCGA-AA-A00O",
+                              "TCGA-AA-A00R", "TCGA-AA-A00U", "TCGA-AA-A010",
+                              "TCGA-AA-A017", "TCGA-AA-A01C", "TCGA-AA-A01D",
+                              "TCGA-AA-A01F", "TCGA-AA-A01I", "TCGA-AA-A01K",
+                              "TCGA-AA-A01P", "TCGA-AA-A01R", "TCGA-AA-A01S",
+                              "TCGA-AA-A01T", "TCGA-AA-A01V", "TCGA-AA-A01X",
+                              "TCGA-AA-A01Z", "TCGA-AA-A022", "TCGA-AA-A024",
+                              "TCGA-AA-A029", "TCGA-AA-A02E", "TCGA-AA-A02H",
+                              "TCGA-AA-A02J", "TCGA-AA-A02O", "TCGA-AA-A02R",
+                              "TCGA-AA-A02Y", "TCGA-AA-A03F", "TCGA-AA-A03J")
+                        vb <- substr(colnames(mData), 1, 12) %in% vPatient
+                        mData <- mData[, vb, drop = F]
+                    }
+                    if (sCancer == "READ") {
+                        vPatient <- 
+                            c("TCGA-AF-2691", "TCGA-AF-2692", "TCGA-AF-3400",
+                              "TCGA-AF-3913", "TCGA-AG-3574", "TCGA-AG-3580",
+                              "TCGA-AG-3584", "TCGA-AG-3593", "TCGA-AG-3594",
+                              "TCGA-AG-4007", "TCGA-AG-A002", "TCGA-AG-A008",
+                              "TCGA-AG-A00C", "TCGA-AG-A00H", "TCGA-AG-A00Y",
+                              "TCGA-AG-A011", "TCGA-AG-A014", "TCGA-AG-A015",
+                              "TCGA-AG-A016", "TCGA-AG-A01J", "TCGA-AG-A01L",
+                              "TCGA-AG-A01N", "TCGA-AG-A01W", "TCGA-AG-A01Y",
+                              "TCGA-AG-A020", "TCGA-AG-A026", "TCGA-AG-A02N",
+                              "TCGA-AG-A02X", "TCGA-AG-A032", "TCGA-AG-A036")
+                        vb <- substr(colnames(mData), 1, 12) %in% vPatient
+                        mData <- mData[, vb, drop = F]
+                    }
+                    fileName1 <- paste(saveFolderName,
+                                       "/",
+                                       ifelse(outputFileName == "", "",
+                                              paste(outputFileName, "__", sep = "")),
+                                       paste(sCancer, collapse = "_"),
+                                       "__",
+                                       sAssay,
+                                       "__",
+                                       ifelse(is.null(tissueType), "tissueTypeAll",
+                                              paste(tissueType, collapse = "_")),
+                                       "__",
+                                       # ifelse(sCancer == "OV",
+                                       strsplit(fileName, split = "_")[[1]][3],
+                                       #			""),
+                                       "__",
+                                       TimeNow(),
+                                       ".txt",
+                                       sep = "")
+                    write.table(cbind(mInfo, mData),
+                                file = fileName1,
+                                quote = F,
+                                sep = "\t",
+                                col.names = T,
+                                row.names = F,
+                                na = "")
+                    rm(mInfo,mData); gc()  # clear the memory
+                    vFileName <- c(vFileName, fileName1)
+                    # #
+                    # vnUnshared <- grep("Unshared", colnames(mData))
+                    # mDataShUn <- mData[, vnUnshared - 1]  # barcode.Log.Ratio
+                    # mDataUnsh <- mData[, vnUnshared    ]  # barcode.Unshared.Log.Ratio
+                    # colnames(mDataShUn) <- unlist(strsplit(colnames(mDataShUn),
+                    # 																			 split = "-Log-Ratio"))
+                    # colnames(mDataUnsh) <- unlist(strsplit(colnames(mDataUnsh),
+                    # 																			 split = "-Unshared-Log-Ratio"))
+                    # substr(colnames(mDataShUn), 17, 17) <- '.'
+                    # substr(colnames(mDataUnsh), 17, 17) <- '.'
+                    # mDataShUn <- mDataShUn[, order(colnames(mDataShUn))]
+                    # mDataUnsh <- mDataUnsh[, order(colnames(mDataUnsh))]
+                    # stopifnot(all(colnames(mDataUnsh) == colnames(mDataShUn)))
+                    # if (!is.null(barCode)) {
+                    # 	vbCol <- ifelse(substr(colnames(mDataShUn), 1, 12) %in%
+                    # 									substr(barCode, 1, 12), T, F)
+                    # 	if (!any(vbCol)) {
+                    # 		print("CPTAC files  : no inputPatientIDs found!")
+                    # 	}
+                    # 	mDataShUn <- mDataShUn[, vbCol, drop = F]
+                    # 	mDataUnsh <- mDataUnsh[, vbCol, drop = F]
+                    # }
+                    # if (length(l$sampleTypeId) < 14) {
+                    # 	vbSampleTypeId <- ifelse(substr(colnames(mDataShUn), 14, 15) %in%
+                    # 													 l$sampleTypeId, T, F)
+                    # 	if (!any(vbSampleTypeId)) {
+                    # 		print("CPTAC files  : no tissueType found!")
+                    # 	}
+                    # 	mDataShUn <- mDataShUn[, vbSampleTypeId, drop = F]
+                    # 	mDataUnsh <- mDataUnsh[, vbSampleTypeId, drop = F]
+                    # }
+                    # sFileNameShUn <- paste(saveFolderName,
+                    # 											 "/",
+                    # 											 ifelse(outputFileName == "", "",
+                    # 															paste(outputFileName, "__", sep = "")),
+                    # 											 paste(sCancer, collapse = "_"),
+                    # 											 "__",
+                    # 											 l$vAssay,
+                    # 											 "__",
+                    # 											 strsplit(fileName, split = "\\.")[[1]][1],
+                    # 											 "__LogRatio",
+                    # 											 "__",
+                    # 											 TimeNow(),
+                    # 											 ".txt",
+                    # 											 sep = "")
+                    # sFileNameUnsh <- paste(saveFolderName,
+                    # 											 "/",
+                    # 											 ifelse(outputFileName == "", "",
+                    # 															paste(outputFileName, "__", sep = "")),
+                    # 											 paste(sCancer, collapse = "_"),
+                    # 											 "__",
+                    # 											 l$vAssay,
+                    # 											 "__",
+                    # 											 strsplit(fileName, split = "\\.")[[1]][1],
+                    # 											 "__LogRatio_Unshared",
+                    # 											 "__",
+                    # 											 TimeNow(),
+                    # 											 ".txt",
+                    # 											 sep = "")
+                    # write.table(cbind(mInfo, mDataShUn),
+                    # 						file = sFileNameShUn,
+                    # 						quote = F,
+                    # 						sep = "\t",
+                    # 						col.names = T,
+                    # 						row.names = F,
+                    # 						na = "")
+                    # write.table(cbind(mInfo, mDataUnsh),
+                    # 						file = sFileNameUnsh,
+                    # 						quote = F,
+                    # 						sep = "\t",
+                    # 						col.names = T,
+                    # 						row.names = F,
+                    # 						na = "")
+                    # vFileName <- c(vFileName, sFileNameShUn, sFileNameUnsh)
+                    # #
+            }}
+        }
+        unlink(tmpDir, recursive = T)
+        options(warn = 0)
+        print("CPTAC files  : downloading done!")
+        return(vFileName)
     }
-    unlink(tmpDir, recursive = T)
-    options(warn = 0)
-    print("CPTAC files  : downloading done!")
-    return(vFileName)
 }
 
 #' DownloadBiospecimenClinicalData: get biospecimen and clinical data
@@ -3298,7 +3308,7 @@ if (class(VCwebContent) == "try-error") {
         VCstartID <- str_locate_all(string = VCwebContent, pattern = "\">")[[1]][1, "end"]+1
         VCendID <- str_locate_all(string = VCwebContent, pattern = "</span>")[[1]][1, "start"]-1
         VCnewestVersionNum <- substr(VCwebContent, VCstartID, VCendID)
-        if (VCnewestVersionNum != "2.0.5") {
+        if (VCnewestVersionNum != "2.0.6") {
             writeLines("\n")
             writeLines("***************************************************************")
             writeLines("A new version of TCGA-Assembler is available!")

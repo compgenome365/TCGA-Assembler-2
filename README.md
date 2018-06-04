@@ -4,4 +4,4 @@ TCGA-Assembler 2 is an open-source, freely available tool that automatically dow
 
 Website: http://www.compgenome.org/TCGA-Assembler/
 
-Current version: 2.0.5
+Current version: 2.0.6
